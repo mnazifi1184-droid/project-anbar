@@ -30,32 +30,33 @@ loginForm.addEventListener('submit', async (e) => {
   // شبیه‌سازی تماس به سرور با تاخیر
   await new Promise(r => setTimeout(r, 700));
 
-  // راه تست سریع: مقایسه با کاربر دمو
-  if (email === demoUser.email && password === demoUser.password) {
-    // ساخت یک "توکن" ساده برای مثال — در دنیای واقعی JWT یا توکن امن از سرور دریافت کن
-    const token = btoa(JSON.stringify({ email, ts: Date.now() }));
-    localStorage.setItem('auth_token', token);
-    messageEl.style.color = 'green';
-    messageEl.textContent = 'ورود موفق. توکن در localStorage ذخیره شد.';
-    // اگر خواستی ریدایرکت به صفحه‌ی محافظت‌شده انجام بده:
-    // window.location.href = 'dashboard.html';
+  // ابتدا چک کن که کاربری در localStorage ثبت شده باشه
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const found = users.find(u => u.email === email);
+
+  // اگر کاربر در localStorage نیست، از demo استفاده کن
+  if (!found) {
+    if (email === demoUser.email && password === demoUser.password) {
+      const token = btoa(JSON.stringify({ email, ts: Date.now() }));
+      localStorage.setItem('auth_token', token);
+      messageEl.style.color = 'green';
+      messageEl.textContent = 'ورود موفق. توکن در localStorage ذخیره شد.';
+    } else {
+      messageEl.style.color = 'crimson';
+      messageEl.textContent = 'ایمیل یا رمز اشتباه است.';
+    }
   } else {
-    messageEl.style.color = 'crimson';
-    messageEl.textContent = 'ایمیل یا رمز اشتباه است.';
+    // اگر کاربر وجود داشت، رمز را بررسی کن
+    if (found.password === password) {
+      const token = btoa(JSON.stringify({ email, ts: Date.now() }));
+      localStorage.setItem('auth_token', token);
+      messageEl.style.color = 'green';
+      messageEl.textContent = 'ورود موفق. توکن در localStorage ذخیره شد.';
+    } else {
+      messageEl.style.color = 'crimson';
+      messageEl.textContent = 'ایمیل یا رمز اشتباه است.';
+    }
   }
 
   submitBtn.disabled = false;
 });
-
-/*
-اگر بخواهی از بک‌اند واقعی استفاده کنی:
-داخل این فایل fetch به endpoint لاگین (مثلاً POST /api/login) بفرست و در صورت موفقیت توکن بگیر و ذخیره کن.
-
-مثال:
-const res = await fetch('https://api.example.com/login', {
-  method:'POST', headers:{'Content-Type':'application/json'},
-  body: JSON.stringify({ email, password })
-});
-const data = await res.json();
-if (res.ok) { localStorage.setItem('auth_token', data.token); ... }
-*/
